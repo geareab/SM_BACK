@@ -1,7 +1,5 @@
 const http = require('http');
 
-const server = http.createServer((req,res)=>{
-    console.log(req);
-});
+const server = http.createServer();
 
 server.listen(3000);
