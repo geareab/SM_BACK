@@ -1,17 +1,21 @@
-var location = [{ title: "Fisrt Post location", content: "first medicine location" }];
+const Item = require("../models/item");
 
 exports.getLocation = (req, res, next) => {
-  res.json({ location});
-};
-
-exports.postLocation = (req, res, next) => {
-  const title = req.body.title;
-  const content = req.body.content;
-  // Create post in db
-  location.push({title,content});
-
-  res.status(201).json({
-    message: "Post created successfully!",
-    post: { id: new Date().toISOString(), title: title, content: content },
-  });
+  var locationID = req.params.locationID;
+  //locationID = locationID.substring(0, 1);
+  Item.find({ location: new RegExp("^" + locationID, "i") })
+    .then((location) => {
+      if (!location) {
+        const error = new Error("not found");
+        error.statusCode = 404;
+        throw error;
+      }
+      res.status(200).json({ message: "location fetched", location: location });
+    })
+    .catch((err) => {
+      if (!err.stausCode) {
+        err.stausCode = 500;
+      }
+      next(err);
+    });
 };

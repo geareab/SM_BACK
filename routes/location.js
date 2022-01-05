@@ -1,15 +1,11 @@
-const express = require('express');
+const express = require("express");
+//const { body } = require('express-validator/check');
 
 const router = express.Router();
 
-const locationController = require('../controllers/location');
+const locationController = require("../controllers/location");
 
 // get /location/getLocation
-router.get('/', locationController.getLocation);
-
-// get /location/postLocation
-router.post('/', locationController.postLocation);
-
-
+router.get("/:locationID", locationController.getLocation);
 
 module.exports = router;
