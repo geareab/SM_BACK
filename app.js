@@ -6,6 +6,8 @@ const itemRoutes = require("./routes/item");
 const companyRoutes = require("./routes/company");
 const locationRoutes = require("./routes/location");
 
+const authRoutes = require("./routes/auth");
+
 const app = express();
 
 //default
@@ -24,21 +26,20 @@ app.use((req, res, next) => {
 app.use("/item", itemRoutes);
 app.use("/company", companyRoutes);
 app.use("/location", locationRoutes);
+app.use('/auth', authRoutes)
 
-app.get('*', function(req, res){
-  res.status(404).send({ message: "invalid url"});
+app.all("*", function (req, res) {
+  res.status(404).send({ message: "invalid url/method" });
 });
 
-
-
-
-app.use((error,req,res,next)=>{
+app.use((error, req, res, next) => {
   console.log(error);
   const status = error.statusCode || 500;
   const message = error.message;
-  res.setHeader('Content-Type', 'application/json');
-  res.status(status).json({message:message});
-})
+  const data = error.data;
+  res.setHeader("Content-Type", "application/json");
+  res.status(status).json({ message: message,data:data });
+});
 
 mongoose
   .connect(

@@ -4,13 +4,14 @@ const { body } = require("express-validator");
 const router = express.Router();
 
 const itemController = require("../controllers/item");
+const isAuth = require('../middleware/is-auth');
 
 // search name
-router.get("/:itemName", itemController.getItem);
+router.get("/:itemName",isAuth, itemController.getItem);
 
 //edit item
 router.put(
-  "/:itemID",
+  "/:itemID",isAuth,
   [
     body("name").notEmpty(),
     body("company").notEmpty(),
@@ -21,7 +22,7 @@ router.put(
 
 // get /item/postItem
 router.post(
-  "/",
+  "/",isAuth,
   [
     body("name").notEmpty(),
     body("company").notEmpty(),
@@ -30,6 +31,6 @@ router.post(
   itemController.postItem
 );
 //delete
-router.delete("/:itemID", itemController.deleteItem);
+router.delete("/:itemID",isAuth, itemController.deleteItem);
 
 module.exports = router;
