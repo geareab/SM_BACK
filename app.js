@@ -1,3 +1,6 @@
+const port = process.env.PORT || 3000
+const mongopass = process.env.PASS;
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
@@ -43,9 +46,9 @@ app.use((error, req, res, next) => {
 
 mongoose
   .connect(
-    "mongodb+srv://JR:E4X0vcfsOzr3fVdl@cluster0.xlknb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+    "mongodb+srv://JR:" + mongopass + "@cluster0.xlknb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
   )
   .then((result) => {
-    app.listen(8080);
+    app.listen(port);
   })
   .catch((err) => console.log(err));
