@@ -13,8 +13,8 @@ exports.getLocation = (req, res, next) => {
       res.status(200).json({ message: "location fetched", location: location });
     })
     .catch((err) => {
-      if (!err.stausCode) {
-        err.stausCode = 500;
+      if (!err.statusCode) {
+        err.statusCode = 500;
       }
       next(err);
     });

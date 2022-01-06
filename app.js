@@ -25,6 +25,10 @@ app.use("/item", itemRoutes);
 app.use("/company", companyRoutes);
 app.use("/location", locationRoutes);
 
+app.get('*', function(req, res){
+  res.status(404).send({ message: "invalid url"});
+});
+
 
 
 
@@ -32,6 +36,7 @@ app.use((error,req,res,next)=>{
   console.log(error);
   const status = error.statusCode || 500;
   const message = error.message;
+  res.setHeader('Content-Type', 'application/json');
   res.status(status).json({message:message});
 })
 
