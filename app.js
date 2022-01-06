@@ -1,7 +1,8 @@
-require('dotenv').config();
+require("dotenv").config();
 
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 3000;
 const mongopass = process.env.PASS;
+const mongouser = process.env.USERM;
 
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -31,7 +32,7 @@ app.use((req, res, next) => {
 app.use("/item", itemRoutes);
 app.use("/company", companyRoutes);
 app.use("/location", locationRoutes);
-app.use('/auth', authRoutes)
+app.use("/auth", authRoutes);
 
 app.all("*", function (req, res) {
   res.status(404).send({ message: "invalid url/method" });
@@ -43,12 +44,16 @@ app.use((error, req, res, next) => {
   const message = error.message;
   const data = error.data;
   res.setHeader("Content-Type", "application/json");
-  res.status(status).json({ message: message,data:data });
+  res.status(status).json({ message: message, data: data });
 });
 
 mongoose
   .connect(
-    "mongodb+srv://JR:" + mongopass + "@cluster0.xlknb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+    "mongodb+srv://" +
+      mongouser +
+      ":" +
+      mongopass +
+      "@cluster0.xlknb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
   )
   .then((result) => {
     app.listen(port);
