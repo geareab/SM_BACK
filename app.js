@@ -7,6 +7,7 @@ const mongouser = process.env.USERM;
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const helmet = require("helmet");
 
 const itemRoutes = require("./routes/item");
 const companyRoutes = require("./routes/company");
@@ -17,6 +18,7 @@ const authRoutes = require("./routes/auth");
 const app = express();
 
 //default
+app.use(helmet());
 app.use(bodyParser.json());
 
 app.use((req, res, next) => {
