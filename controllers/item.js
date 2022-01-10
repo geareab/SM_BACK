@@ -5,6 +5,19 @@ const Item = require("../models/item");
 exports.getItem = (req, res, next) => {
   var itemID = req.params.itemName;
   //itemID = itemID.substring(0, 1);
+  if (itemID ==='~~') {
+    Item.find()
+      .then((item) => {
+        res.status(200).json({ message: "item fetched", item: item });
+      })
+      .catch((err) => {
+        if (!err.statusCode) {
+          err.statusCode = 500;
+        }
+        next(err);
+      });
+  }
+  else{
   Item.find({ name: new RegExp("^" + itemID, "i") })
     .then((item) => {
       if (!item) {
@@ -20,6 +33,7 @@ exports.getItem = (req, res, next) => {
       }
       next(err);
     });
+  }
 };
 
 exports.postItem = (req, res, next) => {
