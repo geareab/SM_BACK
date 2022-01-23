@@ -2,20 +2,42 @@ const { validationResult } = require("express-validator");
 
 const Item = require("../models/item");
 
+const Redis = require('ioredis');
+const redis = new Redis({
+    host: 'redis',
+    port: 6379
+});
+const redisDemo = async () => {
+  await redis.setex('foo',1,'foo')
+  const reply = await redis.get('foo');
+  console.log(reply);
+};
+
+redisDemo();
+
 exports.getItem = (req, res, next) => {
   var itemID = req.params.itemName;
   //itemID = itemID.substring(0, 1);
   if (itemID ==='~~') {
-    Item.find()
-      .then((item) => {
-        res.status(200).json({ message: "item fetched", item: item });
-      })
-      .catch((err) => {
-        if (!err.statusCode) {
-          err.statusCode = 500;
-        }
-        next(err);
-      });
+    redis.get('items',(error,items)=>{
+      if(items!=null){
+        res.status(200).json({ message: "cached item fetched", item: JSON.parse(items) });
+      }
+      else{
+        Item.find()
+        .then((item) => {
+          res.status(200).json({ message: "item fetched", item: item });
+          redis.setex('items',3600,JSON.stringify(item))
+        })
+        .catch((err) => {
+          if (!err.statusCode) {
+            err.statusCode = 500;
+          }
+          next(err);
+        });
+      }
+    })
+    
   }
   else{
   Item.find({ name: new RegExp("^" + itemID, "i") })
