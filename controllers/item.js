@@ -1,19 +1,16 @@
+const fuse = require('./fuseSearch');
+
 const { validationResult } = require("express-validator");
 
 const Item = require("../models/item");
+
 
 const Redis = require('ioredis');
 const redis = new Redis({
     host: 'redis',
     port: 6379
 });
-const redisDemo = async () => {
-  await redis.setex('foo',1,'foo')
-  const reply = await redis.get('foo');
-  console.log(reply);
-};
 
-redisDemo();
 
 exports.getItem = (req, res, next) => {
   var itemID = req.params.itemName;
@@ -40,6 +37,7 @@ exports.getItem = (req, res, next) => {
     
   }
   else{
+
   Item.find({ name: new RegExp("^" + itemID, "i") })
     .then((item) => {
       if (!item) {
