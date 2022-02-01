@@ -1,42 +1,43 @@
-// const Fuse = require('fuse.js');
+const Fuse = require('fuse.js');
 
-// const options = {
-//   includeScore: true,
-//   // equivalent to `keys: [['author', 'tags', 'value']]`
-//   keys: ['name']
-// };
+const options = {
+    includeScore: false,
+    includeRefIndex: false,
+    keys: ['name']
+};
 
-// const applySortFilter = (array, query) => {
-//   // const userFullnames = array.map((element) => {
-//   //   return (element.name = element.name.split(' ').join(''));
-//   // });
+const applySortFilter = (array, query) => {
+    // copy without reference
+    const arrayWithoutSpace = JSON.parse(JSON.stringify(array));
 
-//   const fuse = new Fuse(array, options);
+    //remove unwanted symbols
+    query = query.split(' ').join('').split('/').join('').split('-').join('').split(',').join('');
 
-//   const result = fuse.search(query);
-//   const primaryResult = array.filter(
-//     (_user) =>
-//       _user.name
-//         .toLowerCase()
-//         .split(' ')
-//         .join('')
-//         .split('-')
-//         .join('')
-//         .indexOf(query.toLowerCase().split(' ').join('')) !== -1 &&
-//       _user.name
-//         .toLowerCase()
-//         .split(' ')
-//         .join('')
-//         .split('-')
-//         .join('')
-//         .indexOf(query.toLowerCase().split(' ').join('')) < 1
-//   );
+    arrayWithoutSpace.forEach((element) => {
+        element.name = element.name
+            .split(' ')
+            .join('')
+            .split('/')
+            .join('')
+            .split('-')
+            .join('')
+            .split(',')
+            .join('');
+    });
 
-//   console.log(primaryResult);
+    const fuse = new Fuse(arrayWithoutSpace, options);
+    const result = fuse.search(query);
 
-//   console.log(result.slice(0, 30));
-//   return result.slice(0, 30);
-// };
+    result.forEach((element) => {
+        if (array.findIndex((x) => x._id === element.item._id)) {
+            const itemIndex = array.findIndex((x) => x._id === element.item._id);
+            element.item.name = array[itemIndex].name;
+        }
+    });
+
+    return result.slice(0, 10);
+
+};
 
 
-// module.exports = applySortFilter();
+module.exports = { applySortFilter };

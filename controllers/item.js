@@ -7,53 +7,45 @@ const Item = require("../models/item");
 
 const Redis = require('ioredis');
 const redis = new Redis({
-    host: 'redis',
-    port: 6379
+  host: 'redis',
+  port: 6379
 });
 
+const itemsAllFetch = async () => {
+  await Item.find().then((item) => {
+    redis.set('items', JSON.stringify(item));
+  }).catch((err) => {
+    const error = new Error("redis unable to fetch");
+    error.statusCode = 500;
+    throw error;
+  });
+};
 
 exports.getItem = (req, res, next) => {
-  var itemID = req.params.itemName;
-  //itemID = itemID.substring(0, 1);
-  if (itemID ==='~~') {
-    redis.get('items',(error,items)=>{
-      if(items!=null){
-        res.status(200).json({ message: "cached item fetched", item: JSON.parse(items) });
-      }
-      else{
-        Item.find()
-        .then((item) => {
-          res.status(200).json({ message: "item fetched", item: item });
-          redis.setex('items',3600,JSON.stringify(item))
-        })
-        .catch((err) => {
-          if (!err.statusCode) {
-            err.statusCode = 500;
-          }
-          next(err);
-        });
-      }
-    })
-    
-  }
-  else{
 
-  Item.find({ name: new RegExp("^" + itemID, "i") })
-    .then((item) => {
-      if (!item) {
-        const error = new Error("not found");
-        error.statusCode = 404;
-        throw error;
-      }
-      res.status(200).json({ message: "item fetched", item: item });
-    })
-    .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
-    });
-  }
+  var itemID = req.params.itemName;
+  console.log(itemID);
+  redis.get('items', (error, items) => {
+    if (items != null) {
+      const startsWithX = JSON.parse(items).filter((item) => item.name.toLowerCase().startsWith(itemID.slice(0, 2)));
+      res.status(200).json({ message: "cached item fetched", item: fuse.applySortFilter(startsWithX, itemID) });
+    }
+    else {
+      itemsAllFetch().then(() => {
+        redis.get('items', (error, items) => {
+          const startsWithX = JSON.parse(items).filter((item) => item.name.toLowerCase().startsWith(itemID.slice(0, 2)));
+          res.status(200).json({ message: "new item fetched", item: fuse.applySortFilter(startsWithX, itemID) });
+        })
+      }).catch((err) => {
+        if (!err.statusCode) {
+          err.statusCode = 500;
+        }
+        next(err);
+      });
+    }
+  })
+
+
 };
 
 exports.postItem = (req, res, next) => {
@@ -148,3 +140,11 @@ exports.deleteItem = (req, res, next) => {
       next(err);
     });
 };
+
+//use /item/deleteRedis/~~
+exports.deleteRedisItems = (req, res, next) => {
+  redis.del('items')
+  res.status(200).json({ message: "deleted" });
+
+};
+
