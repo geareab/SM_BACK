@@ -26,17 +26,17 @@ const applySortFilter = (array, query) => {
     });
 
     const fuse = new Fuse(arrayWithoutSpace, options);
-    const result = fuse.search(query);
+    const result = fuse.search(query, { limit: 10 });
 
     result.forEach((element) => {
         if (array.findIndex((x) => x._id === element.item._id)) {
             const itemIndex = array.findIndex((x) => x._id === element.item._id);
             element.item.name = array[itemIndex].name;
         }
+        delete element.refIndex;
+        delete element.item.__v;
     });
-
-    return result.slice(0, 10);
-
+    return result;
 };
 
 

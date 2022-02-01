@@ -3,9 +3,8 @@ const fuse = require('./fuseSearch');
 const { validationResult } = require("express-validator");
 
 const Item = require("../models/item");
-
-
 const Redis = require('ioredis');
+
 const redis = new Redis({
   host: 'redis',
   port: 6379
@@ -143,8 +142,15 @@ exports.deleteItem = (req, res, next) => {
 
 //use /item/deleteRedis/~~
 exports.deleteRedisItems = (req, res, next) => {
-  redis.del('items')
+  redis.del('items');
   res.status(200).json({ message: "deleted" });
 
+};
+
+//use /item/updateRedis/~~
+exports.updateRedisItems = (req, res, next) => {
+  itemsAllFetch().then(() => {
+    res.status(200).json({ message: "redis key updated" });
+  })
 };
 

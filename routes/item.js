@@ -10,6 +10,8 @@ const isAuth = require('../middleware/is-auth');
 router.get("/:itemName", isAuth, itemController.getItem);
 
 router.get("/deleteRedis/:itemName", isAuth, itemController.deleteRedisItems);
+router.get("/updateRedis/:itemName", isAuth, itemController.updateRedisItems);
+
 
 
 //edit item
