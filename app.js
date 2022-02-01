@@ -35,6 +35,7 @@ app.use("/company", companyRoutes);
 app.use("/location", locationRoutes);
 app.use("/auth", authRoutes);
 
+
 app.all("*", function (req, res) {
   res.status(404).send({ message: "invalid url/method" });
 });
@@ -51,10 +52,10 @@ app.use((error, req, res, next) => {
 mongoose
   .connect(
     "mongodb+srv://" +
-      mongouser +
-      ":" +
-      mongopass +
-      "@cluster0.xlknb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+    mongouser +
+    ":" +
+    mongopass +
+    "@cluster0.xlknb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
   )
   .then((result) => {
     app.listen(port);

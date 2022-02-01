@@ -7,11 +7,14 @@ const itemController = require("../controllers/item");
 const isAuth = require('../middleware/is-auth');
 
 // search name
-router.get("/:itemName",isAuth, itemController.getItem);
+router.get("/:itemName", isAuth, itemController.getItem);
+
+router.get("/deleteRedis/:itemName", isAuth, itemController.deleteRedisItems);
+
 
 //edit item
 router.put(
-  "/:itemID",isAuth,
+  "/:itemID", isAuth,
   [
     body("name").notEmpty(),
     body("company").notEmpty(),
@@ -22,7 +25,7 @@ router.put(
 
 // get /item/postItem
 router.post(
-  "/",isAuth,
+  "/", isAuth,
   [
     body("name").notEmpty(),
     body("company").notEmpty(),
@@ -31,6 +34,6 @@ router.post(
   itemController.postItem
 );
 //delete
-router.delete("/:itemID",isAuth, itemController.deleteItem);
+router.delete("/:itemID", isAuth, itemController.deleteItem);
 
 module.exports = router;
