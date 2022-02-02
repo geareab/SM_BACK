@@ -23,16 +23,17 @@ const itemsAllFetch = async () => {
 exports.getItem = (req, res, next) => {
 
   var itemID = req.params.itemName;
+  var amount = req.params.amount;
   redis.get('items', (error, items) => {
     if (items != null) {
       const startsWithX = JSON.parse(items).filter((item) => item.name.toLowerCase().startsWith(itemID.slice(0, 2)));
-      res.status(200).json({ message: "cached item fetched", item: fuse.applySortFilter(startsWithX, itemID) });
+      res.status(200).json({ message: "cached item fetched", item: fuse.applySortFilter(startsWithX, itemID, amount) });
     }
     else {
       itemsAllFetch().then(() => {
         redis.get('items', (error, items) => {
           const startsWithX = JSON.parse(items).filter((item) => item.name.toLowerCase().startsWith(itemID.slice(0, 2)));
-          res.status(200).json({ message: "new item fetched", item: fuse.applySortFilter(startsWithX, itemID) });
+          res.status(200).json({ message: "new item fetched", item: fuse.applySortFilter(startsWithX, itemID, amount) });
         })
       }).catch((err) => {
         if (!err.statusCode) {
@@ -42,9 +43,38 @@ exports.getItem = (req, res, next) => {
       });
     }
   })
-
-
 };
+
+
+exports.getForcedItem = (req, res, next) => {
+
+  var itemID = req.params.itemName;
+  var amount = req.params.amount;
+  redis.get('items', (error, items) => {
+    if (items != null) {
+      const startsWithX = JSON.parse(items).filter((item) => item.name.toLowerCase().startsWith(itemID.slice(0, 2)));
+      const startsWith = JSON.parse(items);
+
+      res.status(200).json({ message: "cached item fetched", item: fuse.applySortFilter(startsWith, itemID, amount) });
+    }
+    else {
+      itemsAllFetch().then(() => {
+        redis.get('items', (error, items) => {
+          const startsWithX = JSON.parse(items).filter((item) => item.name.toLowerCase().startsWith(itemID.slice(0, 2)));
+          const startsWith = JSON.parse(items);
+
+          res.status(200).json({ message: "new item fetched", item: fuse.applySortFilter(startsWith, itemID, amount) });
+        })
+      }).catch((err) => {
+        if (!err.statusCode) {
+          err.statusCode = 500;
+        }
+        next(err);
+      });
+    }
+  })
+};
+
 
 exports.postItem = (req, res, next) => {
   const errors = validationResult(req);

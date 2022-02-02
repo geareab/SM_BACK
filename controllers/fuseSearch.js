@@ -6,7 +6,7 @@ const options = {
     keys: ['name']
 };
 
-const applySortFilter = (array, query) => {
+const applySortFilter = (array, query, amount) => {
     // copy without reference
     const arrayWithoutSpace = JSON.parse(JSON.stringify(array));
 
@@ -24,13 +24,13 @@ const applySortFilter = (array, query) => {
             .split(',')
             .join('');
     });
-
     const fuse = new Fuse(arrayWithoutSpace, options);
-    const result = fuse.search(query, { limit: 5 });
+    const result = fuse.search(query).slice(0, `${amount}`);
 
     result.forEach((element) => {
-        if (array.findIndex((x) => x._id === element.item._id)) {
+        if (array.findIndex((x) => x._id === element.item._id) >= 0) {
             const itemIndex = array.findIndex((x) => x._id === element.item._id);
+
             element.item.name = array[itemIndex].name;
         }
         delete element.refIndex;
@@ -38,6 +38,5 @@ const applySortFilter = (array, query) => {
     });
     return result;
 };
-
 
 module.exports = { applySortFilter };

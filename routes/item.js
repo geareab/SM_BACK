@@ -7,10 +7,9 @@ const itemController = require("../controllers/item");
 const isAuth = require('../middleware/is-auth');
 
 // search name
-router.get("/:itemName", isAuth, itemController.getItem);
-
-router.get("/deleteRedis/:itemName", isAuth, itemController.deleteRedisItems);
-router.get("/updateRedis/:itemName", isAuth, itemController.updateRedisItems);
+router.get("/amount/:amount/name/:itemName", isAuth, itemController.getItem);
+//advance search
+router.get("/forced/amount/:amount/name/:itemName", isAuth, itemController.getForcedItem);
 
 
 

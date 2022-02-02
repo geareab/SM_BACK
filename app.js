@@ -12,6 +12,8 @@ const mongoose = require("mongoose");
 const itemRoutes = require("./routes/item");
 const companyRoutes = require("./routes/company");
 const locationRoutes = require("./routes/location");
+const redisRoutes = require("./routes/redis");
+
 
 const authRoutes = require("./routes/auth");
 
@@ -34,6 +36,8 @@ app.use("/item", itemRoutes);
 app.use("/company", companyRoutes);
 app.use("/location", locationRoutes);
 app.use("/auth", authRoutes);
+app.use("/redis", redisRoutes);
+
 
 
 app.all("*", function (req, res) {
