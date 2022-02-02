@@ -23,7 +23,6 @@ const itemsAllFetch = async () => {
 exports.getItem = (req, res, next) => {
 
   var itemID = req.params.itemName;
-  console.log(itemID);
   redis.get('items', (error, items) => {
     if (items != null) {
       const startsWithX = JSON.parse(items).filter((item) => item.name.toLowerCase().startsWith(itemID.slice(0, 2)));

@@ -26,7 +26,7 @@ const applySortFilter = (array, query) => {
     });
 
     const fuse = new Fuse(arrayWithoutSpace, options);
-    const result = fuse.search(query, { limit: 10 });
+    const result = fuse.search(query, { limit: 5 });
 
     result.forEach((element) => {
         if (array.findIndex((x) => x._id === element.item._id)) {
