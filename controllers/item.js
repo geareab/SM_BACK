@@ -55,7 +55,25 @@ exports.getForcedItem = (req, res, next) => {
       const startsWithX = JSON.parse(items).filter((item) => item.name.toLowerCase().startsWith(itemID.slice(0, 2)));
       const startsWith = JSON.parse(items);
 
-      res.status(200).json({ message: "cached item fetched", item: fuse.applySortFilter(startsWith, itemID, amount) });
+      const startsWithXArray = fuse.applySortFilter(startsWithX, itemID, amount);
+      const startsWithArray = fuse.applySortFilter(startsWith, itemID, parseInt(amount, 10) + 5);
+
+
+      //console.log(startsWithXArray);
+      //console.log(startsWithArray);
+      var newarray = [];
+      startsWithArray.forEach(function (el) {
+        console.log(el.item._id);
+
+        console.log(startsWithXArray.findIndex((x) => x.item._id === el.item._id))
+        if (startsWithXArray.findIndex((x) => x.item._id === el.item._id) < 0) {
+          newarray.push(el);
+        }
+      });
+      console.log(newarray);
+
+
+      res.status(200).json({ message: "cached Forced item fetched", item: newarray });
     }
     else {
       itemsAllFetch().then(() => {
@@ -63,7 +81,7 @@ exports.getForcedItem = (req, res, next) => {
           const startsWithX = JSON.parse(items).filter((item) => item.name.toLowerCase().startsWith(itemID.slice(0, 2)));
           const startsWith = JSON.parse(items);
 
-          res.status(200).json({ message: "new item fetched", item: fuse.applySortFilter(startsWith, itemID, amount) });
+          res.status(200).json({ message: "new Forced item fetched", item: fuse.applySortFilter(startsWith, itemID, amount) });
         })
       }).catch((err) => {
         if (!err.statusCode) {
