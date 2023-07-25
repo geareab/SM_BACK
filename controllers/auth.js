@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 
 exports.signup = (req, res, next) => {
+  console.log(req.body);
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error("Validation Failed");
@@ -59,12 +60,16 @@ exports.login = (req, res, next) => {
         throw error;
       }
 
-      const token = jwt.sign({
-        username: loadeduser.username,
-        userID: loadeduser._id.toString(),
-      }, "pooppooppooppoop", {expiresIn: '24h'});
+      const token = jwt.sign(
+        {
+          username: loadeduser.username,
+          userID: loadeduser._id.toString(),
+        },
+        "pooppooppooppoop",
+        { expiresIn: "24h" }
+      );
 
-      res.status(200).json({token : token, userID: loadeduser._id.toString()})
+      res.status(200).json({ token: token, userID: loadeduser._id.toString() });
     })
     .catch((err) => {
       if (!err.statusCode) {

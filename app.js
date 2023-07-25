@@ -8,12 +8,10 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 
-
 const itemRoutes = require("./routes/item");
 const companyRoutes = require("./routes/company");
 const locationRoutes = require("./routes/location");
 const redisRoutes = require("./routes/redis");
-
 
 const authRoutes = require("./routes/auth");
 
@@ -38,8 +36,6 @@ app.use("/location", locationRoutes);
 app.use("/auth", authRoutes);
 app.use("/redis", redisRoutes);
 
-
-
 app.all("*", function (req, res) {
   res.status(404).send({ message: "invalid url/method" });
 });
@@ -52,16 +48,13 @@ app.use((error, req, res, next) => {
   res.setHeader("Content-Type", "application/json");
   res.status(status).json({ message: message, data: data });
 });
-
+mongoose.set("strictQuery", false);
 mongoose
   .connect(
-    "mongodb+srv://" +
-    mongouser +
-    ":" +
-    mongopass +
-    "@cluster0.xlknb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+    "mongodb://jamesreverson:E4X0vcfsOzr3fVdl@mongo.geareab.com/myFirstDatabase?retryWrites=true&w=majority"
   )
   .then((result) => {
     app.listen(port);
+    console.log("success");
   })
   .catch((err) => console.log(err));
