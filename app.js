@@ -48,14 +48,14 @@ app.use((error, req, res, next) => {
   res.setHeader("Content-Type", "application/json");
   res.status(status).json({ message: message, data: data });
 });
-
+mongoose.set("strictQuery", false);
 mongoose
   .connect(
     "mongodb+srv://" +
-      mongouser +
-      ":" +
-      mongopass +
-      "@cluster0.xlknb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+    mongouser +
+    ":" +
+    mongopass +
+    "@cluster0.xlknb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
   )
   .then((result) => {
     app.listen(port);
