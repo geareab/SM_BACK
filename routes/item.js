@@ -4,18 +4,21 @@ const { body } = require("express-validator");
 const router = express.Router();
 
 const itemController = require("../controllers/item");
-const isAuth = require('../middleware/is-auth');
+const isAuth = require("../middleware/is-auth");
 
 // search name
 router.get("/amount/:amount/name/:itemName", isAuth, itemController.getItem);
 //advance search
-router.get("/forced/amount/:amount/name/:itemName", isAuth, itemController.getForcedItem);
-
-
+router.get(
+  "/forced/amount/:amount/name/:itemName",
+  isAuth,
+  itemController.getForcedItem
+);
 
 //edit item
 router.put(
-  "/:itemID", isAuth,
+  "/:itemID",
+  isAuth,
   [
     body("name").notEmpty(),
     body("company").notEmpty(),
@@ -26,7 +29,8 @@ router.put(
 
 // get /item/postItem
 router.post(
-  "/", isAuth,
+  "/",
+  isAuth,
   [
     body("name").notEmpty(),
     body("company").notEmpty(),

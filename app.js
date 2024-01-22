@@ -8,12 +8,10 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 
-
 const itemRoutes = require("./routes/item");
 const companyRoutes = require("./routes/company");
 const locationRoutes = require("./routes/location");
 const redisRoutes = require("./routes/redis");
-
 
 const authRoutes = require("./routes/auth");
 
@@ -38,8 +36,6 @@ app.use("/location", locationRoutes);
 app.use("/auth", authRoutes);
 app.use("/redis", redisRoutes);
 
-
-
 app.all("*", function (req, res) {
   res.status(404).send({ message: "invalid url/method" });
 });
@@ -56,12 +52,13 @@ app.use((error, req, res, next) => {
 mongoose
   .connect(
     "mongodb+srv://" +
-    mongouser +
-    ":" +
-    mongopass +
-    "@cluster0.xlknb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+      mongouser +
+      ":" +
+      mongopass +
+      "@cluster0.xlknb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
   )
   .then((result) => {
     app.listen(port);
+    console.log("success");
   })
   .catch((err) => console.log(err));

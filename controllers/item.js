@@ -1,63 +1,82 @@
-const fuse = require('./fuseSearch');
+const fuse = require("./fuseSearch");
 
 const { validationResult } = require("express-validator");
 
 const Item = require("../models/item");
-const Redis = require('ioredis');
+const Redis = require("ioredis");
 
 const redis = new Redis({
-  host: 'redis',
-  port: 6379
+  host: "redis",
+  port: 6379,
 });
 
 const itemsAllFetch = async () => {
-  await Item.find().then((item) => {
-    redis.set('items', JSON.stringify(item));
-  }).catch((err) => {
-    const error = new Error("redis unable to fetch");
-    error.statusCode = 500;
-    throw error;
-  });
+  await Item.find()
+    .then((item) => {
+      redis.set("items", JSON.stringify(item));
+    })
+    .catch((err) => {
+      const error = new Error("redis unable to fetch");
+      error.statusCode = 500;
+      throw error;
+    });
 };
 
 exports.getItem = (req, res, next) => {
-
   var itemID = req.params.itemName;
   var amount = req.params.amount;
-  redis.get('items', (error, items) => {
+  redis.get("items", (error, items) => {
     if (items != null) {
-      const startsWithX = JSON.parse(items).filter((item) => item.name.toLowerCase().startsWith(itemID.slice(0, 2)));
-      res.status(200).json({ message: "cached item fetched", item: fuse.applySortFilter(startsWithX, itemID, amount) });
-    }
-    else {
-      itemsAllFetch().then(() => {
-        redis.get('items', (error, items) => {
-          const startsWithX = JSON.parse(items).filter((item) => item.name.toLowerCase().startsWith(itemID.slice(0, 2)));
-          res.status(200).json({ message: "new item fetched", item: fuse.applySortFilter(startsWithX, itemID, amount) });
-        })
-      }).catch((err) => {
-        if (!err.statusCode) {
-          err.statusCode = 500;
-        }
-        next(err);
+      const startsWithX = JSON.parse(items).filter((item) =>
+        item.name.toLowerCase().startsWith(itemID.toLowerCase().slice(0, 2))
+      );
+      res.status(200).json({
+        message: "cached item fetched",
+        item: fuse.applySortFilter(startsWithX, itemID, amount),
       });
+    } else {
+      itemsAllFetch()
+        .then(() => {
+          redis.get("items", (error, items) => {
+            const startsWithX = JSON.parse(items).filter((item) =>
+              item.name.toLowerCase().startsWith(itemID.slice(0, 2))
+            );
+            res.status(200).json({
+              message: "new item fetched",
+              item: fuse.applySortFilter(startsWithX, itemID, amount),
+            });
+          });
+        })
+        .catch((err) => {
+          if (!err.statusCode) {
+            err.statusCode = 500;
+          }
+          next(err);
+        });
     }
-  })
+  });
 };
 
-
 exports.getForcedItem = (req, res, next) => {
-
   var itemID = req.params.itemName;
   var amount = req.params.amount;
-  redis.get('items', (error, items) => {
+  redis.get("items", (error, items) => {
     if (items != null) {
-      const startsWithX = JSON.parse(items).filter((item) => item.name.toLowerCase().startsWith(itemID.slice(0, 2)));
+      const startsWithX = JSON.parse(items).filter((item) =>
+        item.name.toLowerCase().startsWith(itemID.slice(0, 2))
+      );
       const startsWith = JSON.parse(items);
 
-      const startsWithXArray = fuse.applySortFilter(startsWithX, itemID, amount);
-      const startsWithArray = fuse.applySortFilter(startsWith, itemID, parseInt(amount, 10) + 5);
-
+      const startsWithXArray = fuse.applySortFilter(
+        startsWithX,
+        itemID,
+        amount
+      );
+      const startsWithArray = fuse.applySortFilter(
+        startsWith,
+        itemID,
+        parseInt(amount, 10) + 5
+      );
 
       //console.log(startsWithXArray);
       //console.log(startsWithArray);
@@ -65,34 +84,42 @@ exports.getForcedItem = (req, res, next) => {
       startsWithArray.forEach(function (el) {
         console.log(el.item._id);
 
-        console.log(startsWithXArray.findIndex((x) => x.item._id === el.item._id))
+        console.log(
+          startsWithXArray.findIndex((x) => x.item._id === el.item._id)
+        );
         if (startsWithXArray.findIndex((x) => x.item._id === el.item._id) < 0) {
           newarray.push(el);
         }
       });
       console.log(newarray);
 
+      res
+        .status(200)
+        .json({ message: "cached Forced item fetched", item: newarray });
+    } else {
+      itemsAllFetch()
+        .then(() => {
+          redis.get("items", (error, items) => {
+            const startsWithX = JSON.parse(items).filter((item) =>
+              item.name.toLowerCase().startsWith(itemID.slice(0, 2))
+            );
+            const startsWith = JSON.parse(items);
 
-      res.status(200).json({ message: "cached Forced item fetched", item: newarray });
-    }
-    else {
-      itemsAllFetch().then(() => {
-        redis.get('items', (error, items) => {
-          const startsWithX = JSON.parse(items).filter((item) => item.name.toLowerCase().startsWith(itemID.slice(0, 2)));
-          const startsWith = JSON.parse(items);
-
-          res.status(200).json({ message: "new Forced item fetched", item: fuse.applySortFilter(startsWith, itemID, amount) });
+            res.status(200).json({
+              message: "new Forced item fetched",
+              item: fuse.applySortFilter(startsWith, itemID, amount),
+            });
+          });
         })
-      }).catch((err) => {
-        if (!err.statusCode) {
-          err.statusCode = 500;
-        }
-        next(err);
-      });
+        .catch((err) => {
+          if (!err.statusCode) {
+            err.statusCode = 500;
+          }
+          next(err);
+        });
     }
-  })
+  });
 };
-
 
 exports.postItem = (req, res, next) => {
   const errors = validationResult(req);
@@ -189,15 +216,13 @@ exports.deleteItem = (req, res, next) => {
 
 //use /item/deleteRedis/~~
 exports.deleteRedisItems = (req, res, next) => {
-  redis.del('items');
+  redis.del("items");
   res.status(200).json({ message: "deleted" });
-
 };
 
 //use /item/updateRedis/~~
 exports.updateRedisItems = (req, res, next) => {
   itemsAllFetch().then(() => {
     res.status(200).json({ message: "redis key updated" });
-  })
+  });
 };
-

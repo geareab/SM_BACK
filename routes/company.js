@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 const companyController = require("../controllers/company");
-const isAuth = require('../middleware/is-auth');
+const isAuth = require("../middleware/is-auth");
 
 // get /company/getCompany
 router.get("/", isAuth, companyController.getCompany);
