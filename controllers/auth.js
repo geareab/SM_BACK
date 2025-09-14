@@ -2,9 +2,9 @@ const { validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const User = require("../models/user");
+const User = require("../models/User");
 
-exports.signup = (req, res, next) => {
+exports.signup = async (req, res, next) => {
   console.log(req.body);
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -13,68 +13,78 @@ exports.signup = (req, res, next) => {
     error.data = errors.array();
     throw error;
   }
-  const email = req.body.email;
-  const username = req.body.username;
-  const password = req.body.password;
+  
+  try {
+    const email = req.body.email;
+    const username = req.body.username;
+    const password = req.body.password;
 
-  bcrypt
-    .hash(password, 12)
-    .then((hashedPW) => {
-      const user = new User({
-        email: email,
-        username: username,
-        password: hashedPW,
-      });
-      user.save();
-    })
-    .then((result) => {
-      res.status(201).json({ message: "user created", username: username });
-    })
-    .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
-    });
+    // Check if user already exists
+    const existingUser = await User.findByEmail(email);
+    if (existingUser) {
+      const error = new Error("User with this email already exists");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const existingUsername = await User.findByUsername(username);
+    if (existingUsername) {
+      const error = new Error("Username already taken");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    // Hash password
+    const hashedPW = await bcrypt.hash(password, 12);
+    
+    // Create user
+    const user = await User.create(email, hashedPW, username);
+    
+    res.status(201).json({ message: "user created", username: username });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
 };
 
-exports.login = (req, res, next) => {
-  const username = req.body.username;
-  const password = req.body.password;
-  let loadedUser;
-  User.findOne({ username: username })
-    .then((user) => {
-      if (!user) {
-        const error = new Error("no user Found please signup");
-        error.statusCode = 401;
-        throw error;
-      }
-      loadeduser = user;
+exports.login = async (req, res, next) => {
+  try {
+    const username = req.body.username;
+    const password = req.body.password;
+    
+    // Find user by username
+    const user = await User.findByUsername(username);
+    if (!user) {
+      const error = new Error("no user Found please signup");
+      error.statusCode = 401;
+      throw error;
+    }
 
-      return bcrypt.compare(password, user.password);
-    })
-    .then((isEqual) => {
-      if (!isEqual) {
-        const error = new Error("wrong password");
-        error.statusCode = 401;
-        throw error;
-      }
+    // Compare password
+    const isEqual = await bcrypt.compare(password, user.password);
+    if (!isEqual) {
+      const error = new Error("wrong password");
+      error.statusCode = 401;
+      throw error;
+    }
 
-      const token = jwt.sign(
-        {
-          username: loadeduser.username,
-          userID: loadeduser._id.toString(),
-        },
-        "pooppooppooppoop",
-        { expiresIn: "24h" }
-      );
+    // Generate JWT token
+    const token = jwt.sign(
+      {
+        username: user.username,
+        userID: user.id.toString(),
+      },
+      process.env.JWT_SECRET || "pooppooppooppoop",
+      { expiresIn: "24h" }
+    );
 
-      res.status(200).json({ token: token, userID: loadeduser._id.toString() });
-    })
-    .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
-    });
+    res.status(200).json({ token: token, userID: user.id.toString() });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
 };

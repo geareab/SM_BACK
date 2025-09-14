@@ -1,4 +1,5 @@
-const Item = require("../models/item");
+const Company = require("../models/Company");
+const Medicine = require("../models/Medicine");
 
 const Redis = require('ioredis');
 
@@ -7,59 +8,48 @@ const redis = new Redis({
   port: 6379
 });
 
-
-const itemsAllFetch = async () => {
-  await Item.find().then((item) => {
-    redis.set('items', JSON.stringify(item));
-
-  }).catch((err) => {
-    const error = new Error("redis unable to fetch");
+const companiesAllFetch = async () => {
+  try {
+    const companies = await Company.findAll();
+    redis.set('companies', JSON.stringify(companies));
+    return companies;
+  } catch (err) {
+    const error = new Error("redis unable to fetch companies");
     error.statusCode = 500;
     throw error;
-  });
+  }
 };
 
-exports.getCompany = (req, res, next) => {
-
-  redis.get('items', (error, items) => {
-    if (!items) {
-      itemsAllFetch().then(() => {
-        redis.get('items', (error, items) => {
-          const onlyCompany = JSON.parse(items).map(({ company }) => {
-            return { company };
-          })
-          var array = []
-          onlyCompany.map(({ company }) => {
-            array.push(company);
-          })
-          //delete duplicate
-          var uniqArray = [...new Set(array)];
-
-          // .sort(Intl.Collator().compare) used to ignore uppercase or lowercase
-          res.status(200).json({ message: "fresh company fetched", company: uniqArray.sort(Intl.Collator().compare) });
-        })
-      }).catch((err) => {
-        if (!err.statusCode) {
-          err.statusCode = 500;
+exports.getCompany = async (req, res, next) => {
+  try {
+    redis.get('companies', async (error, companies) => {
+      if (!companies) {
+        try {
+          const freshCompanies = await companiesAllFetch();
+          const companyNames = freshCompanies.map(company => company.name);
+          res.status(200).json({
+            message: "fresh companies fetched",
+            company: companyNames.sort(Intl.Collator().compare)
+          });
+        } catch (err) {
+          if (!err.statusCode) {
+            err.statusCode = 500;
+          }
+          next(err);
         }
-        next(err);
-      });
+      } else {
+        const companiesData = JSON.parse(companies);
+        const companyNames = companiesData.map(company => company.name);
+        res.status(200).json({
+          message: "cached companies fetched",
+          company: companyNames.sort(Intl.Collator().compare)
+        });
+      }
+    });
+  } catch (error) {
+    if (!error.statusCode) {
+      error.statusCode = 500;
     }
-    else {
-      const onlyCompany = JSON.parse(items).map(({ company }) => {
-        return { company };
-      })
-      var array = []
-      onlyCompany.map(({ company }) => {
-        array.push(company);
-      })
-      //delete duplicate
-      var uniqArray = [...new Set(array)];
-
-      // .sort(Intl.Collator().compare) used to ignore uppercase or lowercase
-      res.status(200).json({ message: "cached company fetched", company: uniqArray.sort(Intl.Collator().compare) });
-    }
-
-
-  })
+    next(error);
+  }
 };

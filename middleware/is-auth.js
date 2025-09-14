@@ -2,23 +2,23 @@ const jwt = require("jsonwebtoken");
 
 module.exports = (req, res, next) => {
     const authHeader = req.get('Authorization');
-    if(!authHeader){
+    if (!authHeader) {
         const error = new Error("not authentcated.")
         error.statusCode = 401;
         throw error;
     }
     const token = authHeader.split(' ')[1];
-    let decodedtoken ;
-    try{
-        decodedtoken = jwt.verify(token, 'pooppooppooppoop');
-    }catch(err){
+    let decodedtoken;
+    try {
+        decodedtoken = jwt.verify(token, process.env.JWT_SECRET || 'pooppooppooppoop');
+    } catch (err) {
         err.message = ("not authentcated.");
-        err.statusCode= 500;
+        err.statusCode = 500;
         throw err;
-    } 
-    if(!decodedtoken){
+    }
+    if (!decodedtoken) {
         const error = new Error("not authentcated.")
-        error.statusCode= 401;
+        error.statusCode = 401;
         throw error;
     }
 

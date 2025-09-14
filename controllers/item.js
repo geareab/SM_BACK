@@ -2,7 +2,9 @@ const fuse = require("./fuseSearch");
 
 const { validationResult } = require("express-validator");
 
-const Item = require("../models/item");
+const Medicine = require("../models/Medicine");
+const Company = require("../models/Company");
+const Location = require("../models/Location");
 const Redis = require("ioredis");
 
 const redis = new Redis({
@@ -11,15 +13,15 @@ const redis = new Redis({
 });
 
 const itemsAllFetch = async () => {
-  await Item.find()
-    .then((item) => {
-      redis.set("items", JSON.stringify(item));
-    })
-    .catch((err) => {
-      const error = new Error("redis unable to fetch");
-      error.statusCode = 500;
-      throw error;
-    });
+  try {
+    const medicines = await Medicine.findAll();
+    redis.set("items", JSON.stringify(medicines));
+    return medicines;
+  } catch (err) {
+    const error = new Error("redis unable to fetch");
+    error.statusCode = 500;
+    throw error;
+  }
 };
 
 exports.getItem = (req, res, next) => {
@@ -121,41 +123,7 @@ exports.getForcedItem = (req, res, next) => {
   });
 };
 
-exports.postItem = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const error = new Error("cannot be null");
-    error.statusCode = 422;
-    throw error;
-  }
-  const itemname = req.body.name;
-  const company = req.body.company;
-  const location = req.body.location;
-
-  // Create post in db
-  const item = new Item({
-    name: itemname,
-    company: company,
-    location: location,
-  });
-
-  item
-    .save()
-    .then((result) => {
-      res.status(201).json({
-        message: "Post created successfully!",
-        item: { itemname: itemname, company: company, location: location },
-      });
-    })
-    .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
-    });
-};
-
-exports.putItem = (req, res, next) => {
+exports.postItem = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error("cannot be null");
@@ -163,55 +131,140 @@ exports.putItem = (req, res, next) => {
     throw error;
   }
 
-  var itemID = req.params.itemID;
+  try {
+    const itemname = req.body.name;
+    const companyName = req.body.company;
+    const locationName = req.body.location;
 
-  const itemname = req.body.name;
-  const company = req.body.company;
-  const location = req.body.location;
+    // Find or create company
+    let company = await Company.findByName(companyName);
+    if (!company) {
+      company = await Company.create(companyName);
+    }
 
-  Item.findById(itemID)
-    .then((item) => {
-      if (!item) {
-        const error = new Error("Could not find item.");
-        error.statusCode = 404;
-        throw error;
-      }
-      item.name = itemname;
-      item.location = location;
-      item.company = company;
-      return item.save();
-    })
-    .then((result) => {
-      res.status(200).json({ message: "Item updated!", item: result });
-    })
-    .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
+    // Find or create location
+    let location = await Location.findByName(locationName);
+    if (!location) {
+      location = await Location.create(locationName);
+    }
+
+    // Create medicine
+    const medicine = await Medicine.create(itemname, company.id, location.id);
+
+    // Clear Redis cache to force refresh
+    redis.del("items");
+    redis.del("companies");
+    redis.del("locations");
+
+    res.status(201).json({
+      message: "Medicine created successfully!",
+      item: {
+        name: itemname,
+        company: companyName,
+        location: locationName,
+        id: medicine.id
+      },
     });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
 };
 
-exports.deleteItem = (req, res, next) => {
-  var itemID = req.params.itemID;
-  Item.findById(itemID)
-    .then((item) => {
-      if (!item) {
-        const error = new Error("Could not find item.");
-        error.statusCode = 404;
-        throw error;
+exports.putItem = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new Error("cannot be null");
+    error.statusCode = 422;
+    throw error;
+  }
+
+  try {
+    const itemID = req.params.itemID;
+    const itemname = req.body.name;
+    const companyName = req.body.company;
+    const locationName = req.body.location;
+
+    // Check if medicine exists
+    const existingMedicine = await Medicine.findById(itemID);
+    if (!existingMedicine) {
+      const error = new Error("Could not find medicine.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Find or create company
+    let company = await Company.findByName(companyName);
+    if (!company) {
+      company = await Company.create(companyName);
+    }
+
+    // Find or create location
+    let location = await Location.findByName(locationName);
+    if (!location) {
+      location = await Location.create(locationName);
+    }
+
+    // Update medicine
+    const updatedMedicine = await Medicine.update(itemID, itemname, company.id, location.id);
+
+    // Clear Redis cache to force refresh
+    redis.del("items");
+    redis.del("companies");
+    redis.del("locations");
+
+    res.status(200).json({
+      message: "Medicine updated!",
+      item: {
+        id: updatedMedicine.id,
+        name: itemname,
+        company: companyName,
+        location: locationName
       }
-      return Item.findByIdAndRemove(itemID);
-    })
-    .then(() => {
-      res.status(200).json({ message: "Item deleted!" });
-    })
-    .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
     });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.deleteItem = async (req, res, next) => {
+  try {
+    const itemID = req.params.itemID;
+
+    // Check if medicine exists
+    const existingMedicine = await Medicine.findById(itemID);
+    if (!existingMedicine) {
+      const error = new Error("Could not find medicine.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Delete medicine
+    const deleted = await Medicine.delete(itemID);
+
+    if (deleted) {
+      // Clear Redis cache to force refresh
+      redis.del("items");
+      redis.del("companies");
+      redis.del("locations");
+
+      res.status(200).json({ message: "Medicine deleted!" });
+    } else {
+      const error = new Error("Failed to delete medicine.");
+      error.statusCode = 500;
+      throw error;
+    }
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
 };
 
 //use /item/deleteRedis/~~

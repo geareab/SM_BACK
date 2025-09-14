@@ -3,7 +3,7 @@ const { body } = require("express-validator");
 
 const router = express.Router();
 const authController = require("../controllers/auth");
-const User = require("../models/user");
+const User = require("../models/User");
 
 router.post(
   "/signup",
@@ -11,12 +11,16 @@ router.post(
     body("email")
       .isEmail()
       .withMessage("Please enter a valid email.")
-      .custom((value, { req }) => {
-        return User.findOne({ email: value }).then((userDoc) => {
+      .custom(async (value, { req }) => {
+        try {
+          const userDoc = await User.findByEmail(value);
           if (userDoc) {
             return Promise.reject("E-Mail address already exists!");
           }
-        });
+        } catch (error) {
+          // If there's an error checking, allow the signup to proceed
+          // The controller will handle duplicate email validation
+        }
       })
       .normalizeEmail(),
     body("password").trim().isLength({ min: 5 }),

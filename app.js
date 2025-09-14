@@ -1,12 +1,10 @@
 require("dotenv").config();
 
 const port = process.env.PORT || 3000;
-const mongopass = process.env.PASS;
-const mongouser = process.env.USERM;
 
 const express = require("express");
 const bodyParser = require("body-parser");
-const mongoose = require("mongoose");
+const pool = require("./config/database");
 
 const itemRoutes = require("./routes/item");
 const companyRoutes = require("./routes/company");
@@ -48,17 +46,16 @@ app.use((error, req, res, next) => {
   res.setHeader("Content-Type", "application/json");
   res.status(status).json({ message: message, data: data });
 });
-mongoose.set("strictQuery", false);
-mongoose
-  .connect(
-    "mongodb+srv://" +
-    mongouser +
-    ":" +
-    mongopass +
-    "@cluster0.xlknb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
-  )
-  .then((result) => {
-    app.listen(port);
-    console.log("success");
-  })
-  .catch((err) => console.log(err));
+
+// Test PostgreSQL connection and start server
+pool.query('SELECT NOW()', (err, res) => {
+  if (err) {
+    console.error('Error connecting to PostgreSQL:', err);
+    process.exit(1);
+  } else {
+    console.log('Connected to PostgreSQL database successfully');
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+  }
+});
